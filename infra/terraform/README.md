@@ -42,6 +42,7 @@ for ROLE in \
   roles/cloudscheduler.admin \
   roles/secretmanager.admin \
   roles/artifactregistry.admin \
+  roles/iam.workloadIdentityPoolAdmin \
   roles/storage.admin ; do
   gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
     --member="serviceAccount:$SA" --role="$ROLE" --condition=None
@@ -91,6 +92,30 @@ printf '%s' 'me@example.com' | gcloud secrets versions add monarch-email --data-
 > Images must exist in Artifact Registry before the Cloud Run Jobs can execute.
 > The Scheduler wiring uses the Jobs execution API with the scheduler SA's
 > OAuth token (`roles/run.invoker`).
+
+## GitHub Actions deploy (keyless WIF)
+
+`wif.tf` provisions a Workload Identity Federation pool/provider plus a dedicated
+`github-deployer` service account the CI workflows impersonate — no SA keys. It can push
+images (`artifactregistry.writer`) and update the three Cloud Run jobs (`run.developer` +
+`serviceAccountUser` on the runtime SAs). The trusted repo defaults to
+`the-kevin-kong/data-life` (`var.github_repo`).
+
+After `terraform apply`, wire the two Actions secrets from the outputs:
+
+```bash
+terraform output github_actions   # → { WIF_PROVIDER = "...", DEPLOY_SA = "..." }
+
+REPO=the-kevin-kong/data-life
+gh secret set WIF_PROVIDER -R "$REPO" \
+  -b "$(terraform output -json github_actions | jq -r .WIF_PROVIDER)"
+gh secret set DEPLOY_SA -R "$REPO" \
+  -b "$(terraform output -json github_actions | jq -r .DEPLOY_SA)"
+```
+
+Also set the repo **vars** `GCP_PROJECT_ID`, `GCP_REGION`, `ARTIFACT_REPO` (and `COMPOSE_REPO`
+for the dashboard). Consumed by [deploy.yml](../../.github/workflows/deploy.yml) and
+[deploy-dashboard.yml](../../.github/workflows/deploy-dashboard.yml).
 
 ## Notes
 - `*.tfvars` and state are git-ignored; only `*.tfvars.example` is committed.

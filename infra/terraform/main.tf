@@ -20,6 +20,8 @@ resource "google_project_service" "apis" {
     "secretmanager.googleapis.com",
     "artifactregistry.googleapis.com",
     "iam.googleapis.com",
+    "iamcredentials.googleapis.com", # SA impersonation (WIF)
+    "sts.googleapis.com",            # OIDC token exchange (WIF)
   ])
   service            = each.value
   disable_on_destroy = false

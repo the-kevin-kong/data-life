@@ -20,3 +20,11 @@ output "bigquery_datasets" {
     marts   = google_bigquery_dataset.marts.dataset_id
   }
 }
+
+output "github_actions" {
+  description = "Set these on the data-life repo (Settings → Secrets and variables → Actions) for keyless WIF deploys."
+  value = {
+    WIF_PROVIDER = google_iam_workload_identity_pool_provider.github.name
+    DEPLOY_SA    = google_service_account.github_deployer.email
+  }
+}
