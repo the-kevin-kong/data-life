@@ -66,3 +66,9 @@ variable "monarch_secret_ids" {
   type    = list(string)
   default = ["monarch-email", "monarch-password", "monarch-mfa-secret", "monarch-session"]
 }
+
+variable "github_repo" {
+  type        = string
+  default     = "the-kevin-kong/data-life"
+  description = "owner/repo whose GitHub Actions may impersonate the deployer SA via WIF."
+}
