@@ -45,7 +45,7 @@ ledger_df = load_recent_transactions(
 # -----------------------------------------------------------------------------
 # 2. DYNAMIC TAX FORMULA ENGINE (Exact logic from spreadsheet)
 # -----------------------------------------------------------------------------
-def calc_se_tax(net_earnings, w2_income):
+def calc_se_tax(net_earnings: float, w2_income: float) -> float:
     cap = 184500  # Spreadsheet cap limit
     if w2_income >= cap:
         return net_earnings * 0.029
@@ -55,7 +55,7 @@ def calc_se_tax(net_earnings, w2_income):
         return ss_earnings * 0.124 + net_earnings * 0.029
 
 
-def calc_fed_tax(taxable_income):
+def calc_fed_tax(taxable_income: float) -> float:
     if taxable_income <= 24800:
         return taxable_income * 0.10
     elif taxable_income <= 100800:
@@ -68,7 +68,7 @@ def calc_fed_tax(taxable_income):
         return 82048 + 0.32 * (taxable_income - 403550)
 
 
-def calc_ny_tax(w2_income, contrib_529):
+def calc_ny_tax(w2_income: float, contrib_529: float) -> float:
     base = w2_income - contrib_529
     if base <= 27900:
         return base * 0.04
@@ -80,7 +80,7 @@ def calc_ny_tax(w2_income, contrib_529):
         return 15951 + 0.0585 * (base - 323200)
 
 
-def calc_nj_tax(agi):
+def calc_nj_tax(agi: float) -> float:
     if agi <= 20000:
         return agi * 0.014
     elif agi <= 50000:
@@ -97,9 +97,9 @@ def calc_nj_tax(agi):
         return 27807.5 + 0.0897 * (agi - 500000)
 
 
-def calc_nj_credit(ny_tax, nj_tax, w2_income, agi):
+def calc_nj_credit(ny_tax: float, nj_tax: float, w2_income: float, agi: float) -> float:
     if agi == 0:
-        return 0
+        return 0.0
     return min(ny_tax, nj_tax * (w2_income / agi))
 
 
@@ -287,7 +287,14 @@ with tab1:
         '<div class="main-header">2026 Tax & Contribution Calculator</div>', unsafe_allow_html=True
     )
 
-    def render_row(label, val1, val2, is_header=False, is_bold=False, is_currency=True):
+    def render_row(
+        label: str,
+        val1: float | str,
+        val2: float | str,
+        is_header: bool = False,
+        is_bold: bool = False,
+        is_currency: bool = True,
+    ) -> None:
         if is_header:
             st.markdown(f'<div class="section-header">{label}</div>', unsafe_allow_html=True)
         else:
