@@ -104,8 +104,12 @@ After `terraform apply`, wire the two Actions secrets from the outputs:
 
 ```bash
 terraform output github_actions   # → { WIF_PROVIDER = "...", DEPLOY_SA = "..." }
-gh secret set WIF_PROVIDER -R the-kevin-kong/data-life -b "$(terraform output -raw ...)"
-gh secret set DEPLOY_SA    -R the-kevin-kong/data-life -b "github-deployer@$GCP_PROJECT_ID.iam.gserviceaccount.com"
+
+REPO=the-kevin-kong/data-life
+gh secret set WIF_PROVIDER -R "$REPO" \
+  -b "$(terraform output -json github_actions | jq -r .WIF_PROVIDER)"
+gh secret set DEPLOY_SA -R "$REPO" \
+  -b "$(terraform output -json github_actions | jq -r .DEPLOY_SA)"
 ```
 
 Also set the repo **vars** `GCP_PROJECT_ID`, `GCP_REGION`, `ARTIFACT_REPO` (and `COMPOSE_REPO`
