@@ -1,0 +1,20 @@
+# Portainer GitOps stack for the NAS. This template is the source of truth; the
+# deploy-dashboard.yml workflow substitutes the __IMAGE_TAG__ placeholder with the
+# built image's git SHA and pushes the result to the docker-compose repo.
+#
+# Set stack env in Portainer: GCP_PROJECT_ID, GCP_REGION, DASHBOARD_SA_KEY
+# (absolute host path to the read-only BigQuery SA key on the NAS).
+services:
+  dashboard:
+    image: ${GCP_REGION:-us-central1}-docker.pkg.dev/${GCP_PROJECT_ID}/data-life/streamlit:__IMAGE_TAG__
+    container_name: data-life-dashboard
+    restart: unless-stopped
+    environment:
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:?set in Portainer stack env}
+      BQ_MARTS_DATASET: marts
+      GOOGLE_APPLICATION_CREDENTIALS: /secrets/dashboard-sa.json
+      LOG_JSON: "true"
+    volumes:
+      - ${DASHBOARD_SA_KEY:?set absolute NAS path in Portainer stack env}:/secrets/dashboard-sa.json:ro
+    ports:
+      - "8501:8501"

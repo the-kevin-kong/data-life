@@ -1,0 +1,55 @@
+# ---- Secrets & credentials (NEVER commit) ----
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+**/service-account*.json
+**/*-sa-key.json
+**/credentials*.json
+gha-creds-*.json
+.monarch-session*
+*session*.pickle
+# Dashboard SA key mounted at deploy time
+apps/dashboard/secrets/
+
+# ---- Terraform ----
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!*.tfvars.example
+override.tf
+override.tf.json
+.terraform.lock.hcl
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# ---- dbt ----
+transform/dbt/target/
+transform/dbt/dbt_packages/
+profiles.yml
+!transform/dbt/profiles.yml
+**/logs/
+
+# ---- IDE / OS ----
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ---- Claude Code local settings ----
+.claude/settings.local.json

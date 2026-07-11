@@ -1,0 +1,28 @@
+# Build + push the job images plus the streamlit dashboard from the repo root.
+#   gcloud builds submit --config cloudbuild.yaml \
+#     --substitutions=_REG=us-central1-docker.pkg.dev/$GCP_PROJECT_ID/data-life,_TAG=$(git rev-parse HEAD) .
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REG}/ingest-monarch:latest", "-f", "services/ingest-monarch/Dockerfile", "."]
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REG}/dbt-build:latest", "-f", "transform/dbt/Dockerfile", "."]
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REG}/split-transactions:latest", "-f", "services/split-transactions/Dockerfile", "."]
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REG}/streamlit:${_TAG}", "-f", "apps/dashboard/Dockerfile", "."]
+
+images:
+  - "${_REG}/ingest-monarch:latest"
+  - "${_REG}/dbt-build:latest"
+  - "${_REG}/split-transactions:latest"
+  - "${_REG}/streamlit:${_TAG}"
+
+substitutions:
+  # git sha for the streamlit image; matches the sha-pinned Portainer GitOps deploy.
+  _TAG: latest
+
+options:
+  # No machineType = default pool (e2-standard-2), covered by the Cloud Build
+  # free tier (2,500 build-min/month). Setting an explicit machineType uses a
+  # dedicated billed VM and loses the free tier, so leave it unset.
+  logging: CLOUD_LOGGING_ONLY

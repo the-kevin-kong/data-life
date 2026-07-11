@@ -1,0 +1,18 @@
+# Committed on purpose: it contains no secrets, only env-var references.
+# Auth uses Application Default Credentials (local: `gcloud auth
+# application-default login`; Cloud Run: the job's runtime service account).
+data_life:
+  target: prod
+  outputs:
+    prod:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      # Default schema; staging/marts folders override via +schema and the
+      # generate_schema_name macro so datasets are `staging` and `marts`.
+      dataset: "{{ env_var('BQ_MARTS_DATASET', 'marts') }}"
+      location: US
+      threads: 4
+      priority: interactive
+      job_execution_timeout_seconds: 600
+      job_retries: 1

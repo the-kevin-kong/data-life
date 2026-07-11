@@ -1,0 +1,84 @@
+name: Deploy dashboard
+
+# On push to main (dashboard-relevant paths), build + push the Streamlit image to
+# Artifact Registry, then render a runtime `streamlit.yml` compose file and push it
+# to the GitOps compose repo (vars.COMPOSE_REPO), where Portainer redeploys the stack.
+#
+# The image tag is the immutable git SHA: rewriting it changes streamlit.yml, so
+# Portainer sees a git diff and redeploys.
+#
+# Requires (repo settings):
+#   vars.GCP_PROJECT_ID, vars.GCP_REGION, vars.ARTIFACT_REPO
+#   vars.COMPOSE_REPO           - target GitOps repo, e.g. owner/docker-compose
+#   secrets.WIF_PROVIDER        - Workload Identity Federation provider resource name
+#   secrets.DEPLOY_SA           - deployer service account email (keyless auth)
+#   secrets.DOCKER_COMPOSE_PAT  - fine-grained PAT, contents:write on the compose repo
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/dashboard/**
+      - packages/common/**
+      - uv.lock
+      - pyproject.toml
+      - .github/workflows/deploy-dashboard.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for Workload Identity Federation
+
+jobs:
+  build:
+    name: Build & push image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/dashboard/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPO }}/streamlit:${{ github.sha }}
+            ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPO }}/streamlit:latest
+
+  deploy:
+    name: Push streamlit.yml to docker-compose repo
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout data-life (compose template)
+        uses: actions/checkout@v4
+        with:
+          path: data-life
+      - name: Checkout docker-compose repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.COMPOSE_REPO }}
+          token: ${{ secrets.DOCKER_COMPOSE_PAT }}
+          path: docker-compose
+      - name: Render streamlit.yml from template
+        run: |
+          sed "s/__IMAGE_TAG__/${GITHUB_SHA}/" \
+            data-life/apps/dashboard/streamlit.yml > docker-compose/streamlit.yml
+      - name: Commit & push if changed
+        working-directory: docker-compose
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add streamlit.yml
+          if git diff --cached --quiet; then
+            echo "streamlit.yml unchanged; nothing to deploy."
+          else
+            git commit -m "chore: deploy dashboard ${GITHUB_SHA::7}"
+            git push
+          fi

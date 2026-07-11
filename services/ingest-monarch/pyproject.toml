@@ -1,0 +1,19 @@
+[project]
+name = "ingest-monarch"
+version = "0.1.0"
+description = "Cloud Run service: pull Monarch Money -> BigQuery raw.*"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "dl-common",
+    "dl-monarch",
+]
+
+[project.scripts]
+ingest-monarch = "dl_ingest.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dl_ingest"]

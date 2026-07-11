@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: monarch
+    description: Raw Monarch Money records landed by the ingestion job (one row per record, soft-deleted on disappearance).
+    database: "{{ env_var('GCP_PROJECT_ID') }}"
+    schema: monarch
+    tables:
+      - name: transactions
+      - name: accounts
+      - name: categories
+      - name: tags
+      - name: budgets

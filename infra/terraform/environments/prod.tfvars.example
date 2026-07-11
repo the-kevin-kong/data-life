@@ -1,0 +1,6 @@
+# Copy to prod.tfvars (git-ignored) and adjust as needed.
+# `project_id` is intentionally omitted here so it stays out of the repo —
+# provide it via the TF_VAR_project_id env var instead (see the infra README).
+region             = "us-central1"
+image_tag          = "latest"
+scheduler_timezone = "America/New_York"

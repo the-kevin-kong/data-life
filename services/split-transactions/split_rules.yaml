@@ -1,0 +1,29 @@
+# Split rules, keyed by the Monarch tag that triggers them.
+# Tag a transaction with a rule's `tag` (e.g. `split:rent`) and the splitter
+# will divide it into the legs below on its next run.
+#
+# Leg types:
+#   fixed       - an exact dollar magnitude
+#   percentage  - a percent of the transaction total
+#   remainder   - absorbs whatever is left so legs always sum to the total
+#                 (at most one per rule; if omitted, rounding is reconciled
+#                  onto the last leg)
+# `category_id` is optional; look up ids in Monarch (or the `dim_categories`
+# mart) and paste them here.
+
+rules:
+  - tag: "split:rent"
+    legs:
+      - name: "My share"
+        type: fixed
+        amount: 1500.00
+      - name: "Roommate share"
+        type: remainder
+
+  - tag: "split:costco"
+    legs:
+      - name: "Household"
+        type: percentage
+        percent: 60
+      - name: "Personal"
+        type: remainder

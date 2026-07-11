@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: stg_monarch__transactions
+    description: One row per non-deleted transaction, typed from the raw JSON payload.
+    columns:
+      - name: transaction_id
+        description: Monarch transaction id.
+        data_tests: [not_null, unique]
+      - name: amount
+        data_tests: [not_null]
+      - name: transaction_date
+        data_tests: [not_null]
+
+  - name: stg_monarch__accounts
+    columns:
+      - name: account_id
+        data_tests: [not_null, unique]
+
+  - name: stg_monarch__categories
+    columns:
+      - name: category_id
+        data_tests: [not_null, unique]
+
+  - name: stg_monarch__tags
+    columns:
+      - name: tag_id
+        data_tests: [not_null, unique]

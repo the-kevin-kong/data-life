@@ -1,0 +1,67 @@
+name: Deploy
+
+# Manual deploy: builds + pushes the three job images to Artifact Registry,
+# then points the Cloud Run Jobs at the new image tag.
+#
+# Requires (repo settings):
+#   vars.GCP_PROJECT_ID, vars.GCP_REGION, vars.ARTIFACT_REPO
+#   secrets.WIF_PROVIDER  - Workload Identity Federation provider resource name
+#   secrets.DEPLOY_SA     - deployer service account email (keyless auth)
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for Workload Identity Federation
+
+jobs:
+  build:
+    name: Build & push images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: ingest-monarch
+            dockerfile: services/ingest-monarch/Dockerfile
+          - name: dbt-build
+            dockerfile: transform/dbt/Dockerfile
+          - name: split-transactions
+            dockerfile: services/split-transactions/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPO }}/${{ matrix.name }}:${{ github.sha }}
+            ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPO }}/${{ matrix.name }}:latest
+
+  deploy:
+    name: Update Cloud Run Jobs
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        name: [ingest-monarch, dbt-build, split-transactions]
+    steps:
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Point job at the new image
+        run: |
+          gcloud run jobs update ${{ matrix.name }} \
+            --region ${{ vars.GCP_REGION }} \
+            --image ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPO }}/${{ matrix.name }}:${{ github.sha }}
