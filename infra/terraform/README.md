@@ -42,6 +42,7 @@ for ROLE in \
   roles/cloudscheduler.admin \
   roles/secretmanager.admin \
   roles/artifactregistry.admin \
+  roles/iam.workloadIdentityPoolAdmin \
   roles/storage.admin ; do
   gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
     --member="serviceAccount:$SA" --role="$ROLE" --condition=None
