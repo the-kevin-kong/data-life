@@ -37,7 +37,6 @@ jobs:
       # dbt parse does not connect to BigQuery; a placeholder satisfies the
       # required env var without publishing the real project id.
       GCP_PROJECT_ID: ci-parse-only
-      DBT_PROFILES_DIR: transform/dbt
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
