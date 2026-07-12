@@ -22,6 +22,25 @@ from dl_dashboard.charts import cashflow_sankey
 from dl_dashboard.data import load_activity, load_monthly_spending, load_recent_transactions
 from dl_dashboard.menu import menu
 
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    html, body, [class*="css"]  {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Optional: Make headers pop slightly more with a cleaner weight */
+    h1, h2, h3 {
+        font-weight: 600 !important;
+        letter-spacing: -0.02em;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 menu()
 
 st.set_page_config(page_title="Financial Overview", page_icon="💸", layout="wide")
