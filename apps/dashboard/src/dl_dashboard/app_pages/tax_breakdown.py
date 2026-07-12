@@ -1,34 +1,13 @@
+"""2026 tax breakdown — actuals (YTD from the ledger) vs year-end estimation."""
+
+from __future__ import annotations
+
+import pandas as pd
 import streamlit as st
 from dl_dashboard.data import load_recent_transactions
-from dl_dashboard.menu import menu
+from pandas.io.formats.style import Styler
 
-menu()
-
-# Set page configuration
-st.set_page_config(
-    page_title="2026 Tax Breakdown",
-    page_icon="💰",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-# Custom CSS for clean spreadsheet-like styling
-st.markdown(
-    """
-    <style>
-    .reportview-container { background: #f5f7f9; }
-    .main-header { font-size: 26px; font-weight: bold; color: #1E3A8A; margin-bottom: 20px; }
-    .section-header {
-        font-size: 18px; font-weight: bold; color: #2563EB;
-        background-color: #EFF6FF; padding: 8px; border-left: 5px solid #2563EB;
-        margin-top: 20px; margin-bottom: 10px;
-    }
-    .total-row { font-weight: bold; background-color: #F3F4F6; }
-    </style>
-""",
-    unsafe_allow_html=True,
-)
-
+st.title("2026 tax breakdown")
 
 # -----------------------------------------------------------------------------
 # 1. PLACEHOLDER DATA SOURCE (Comprehensive Ledger)
@@ -106,37 +85,39 @@ def calc_nj_credit(ny_tax: float, nj_tax: float, w2_income: float, agi: float) -
 # -----------------------------------------------------------------------------
 # 3. SIDEBAR USER INPUTS (Yellow Highlighted Cells Replacement)
 # -----------------------------------------------------------------------------
-st.sidebar.header("🔧 Interactive Inputs (YE Estimation)")
+st.sidebar.header("Interactive inputs (YE estimation)")
 
-with st.sidebar.expander("📈 Income Projections", expanded=True):
-    ye_w2_gross = st.number_input("Bombas W-2 Gross Income", value=194644.0, step=1000.0)
+with st.sidebar.expander("Income projections", expanded=True, icon=":material/trending_up:"):
+    ye_w2_gross = st.number_input("Bombas W-2 gross income", value=194644.0, step=1000.0)
     ye_ira_withdrawal = st.number_input(
-        "Inherited IRA Gross Withdrawal", value=35000.0, step=1000.0
+        "Inherited IRA gross withdrawal", value=35000.0, step=1000.0
     )
-    ye_sched_c_inc = st.number_input("Schedule C Income", value=65000.0, step=1000.0)
-    ye_sched_c_exp = st.number_input("Schedule C Expense", value=-61.25, step=5.0)
-    ye_home_office = st.number_input("Home Office Expense", value=-880.0, step=5.0)
+    ye_sched_c_inc = st.number_input("Schedule C income", value=65000.0, step=1000.0)
+    ye_sched_c_exp = st.number_input("Schedule C expense", value=-61.25, step=5.0)
+    ye_home_office = st.number_input("Home office expense", value=-880.0, step=5.0)
 
-with st.sidebar.expander("🛡️ Solo 401k & Deductions", expanded=False):
+with st.sidebar.expander("Solo 401k & deductions", expanded=False, icon=":material/shield:"):
     ye_shared_deferrals = st.number_input(
-        "Shared 401k Deferrals at Bombas", value=24500.0, step=500.0
+        "Shared 401k deferrals at Bombas", value=24500.0, step=500.0
     )
-    ye_after_tax_cash = st.number_input("Actual After-Tax Cash Contributed", value=0.0, step=500.0)
-    ye_401k_contribs = st.number_input("401k Contributions Deduction", value=24500.0, step=500.0)
-    ye_hsa_contribs = st.number_input("HSA Contributions Deduction", value=8500.0, step=500.0)
-    ye_employer_401k = st.number_input("Solo 401k Employer Contributions", value=0.0, step=500.0)
-    ye_529_contribs = st.number_input("529 Contributions", value=10000.0, step=500.0)
+    ye_after_tax_cash = st.number_input("Actual after-tax cash contributed", value=0.0, step=500.0)
+    ye_401k_contribs = st.number_input("401k contributions deduction", value=24500.0, step=500.0)
+    ye_hsa_contribs = st.number_input("HSA contributions deduction", value=8500.0, step=500.0)
+    ye_employer_401k = st.number_input("Solo 401k employer contributions", value=0.0, step=500.0)
+    ye_529_contribs = st.number_input("529 contributions", value=10000.0, step=500.0)
 
-with st.sidebar.expander("🏛️ Taxes Paid & Withholdings", expanded=False):
-    ye_fed_withheld_w2 = st.number_input("Federal Tax Withheld (W-2)", value=-10287.70, step=500.0)
-    ye_fed_withheld_ira = st.number_input("Federal Tax Withheld (IRA)", value=-13939.10, step=500.0)
+with st.sidebar.expander(
+    "Taxes paid & withholdings", expanded=False, icon=":material/account_balance:"
+):
+    ye_fed_withheld_w2 = st.number_input("Federal tax withheld (W-2)", value=-10287.70, step=500.0)
+    ye_fed_withheld_ira = st.number_input("Federal tax withheld (IRA)", value=-13939.10, step=500.0)
     ye_fed_estimated = st.number_input(
-        "Federal Quarterly Estimated Paid", value=-39728.00, step=500.0
+        "Federal quarterly estimated paid", value=-39728.00, step=500.0
     )
-    ye_ny_estimated = st.number_input("NY Quarterly Estimated Paid", value=-8298.00, step=500.0)
-    ye_ny_withheld_w2 = st.number_input("NY Tax Withheld (W-2)", value=0.0, step=500.0)
-    ye_nj_withheld_w2 = st.number_input("NJ Tax Withheld (W-2)", value=-5979.55, step=500.0)
-    ye_nj_estimated = st.number_input("NJ Quarterly Estimated Paid", value=0.0, step=500.0)
+    ye_ny_estimated = st.number_input("NY quarterly estimated paid", value=-8298.00, step=500.0)
+    ye_ny_withheld_w2 = st.number_input("NY tax withheld (W-2)", value=0.0, step=500.0)
+    ye_nj_withheld_w2 = st.number_input("NJ tax withheld (W-2)", value=-5979.55, step=500.0)
+    ye_nj_estimated = st.number_input("NJ quarterly estimated paid", value=0.0, step=500.0)
 
 # -----------------------------------------------------------------------------
 # 4. COMPUTE ACTUALS (YTD) USING EXACT SPREADSHEET SUMIFS FILTERS
@@ -278,113 +259,149 @@ ye_nj_bal = ye_nj_net + ye_total_nj_paid
 # -----------------------------------------------------------------------------
 # 6. APP RENDER LAYOUT
 # -----------------------------------------------------------------------------
-st.title("💼 2026 Tax Breakdown")
+# Subtotal rows are bolded; ratio rows format as a plain 4-dp number, everything
+# else as currency. Membership is keyed by the row label.
+Row = tuple[str, float, float]
 
-tab1, tab2 = st.tabs(["📊 Tax & Contribution Calculator", "📋 Ledger (Data Source)"])
+BOLD_LABELS = {
+    "Net Schedule C profit",
+    "Total household gross income",
+    "Remaining employer contribution capacity",
+    "Remaining mega backdoor capacity",
+    "Total federal taxes paid so far",
+    "Total NY state taxes paid so far",
+    "Total NJ state taxes paid so far",
+    "Adjusted gross income (AGI)",
+    "Total estimated federal taxable income",
+    "Total federal balance due / (refund)",
+    "Total NY state balance due / (refund)",
+    "Total NJ state balance due / (refund)",
+}
+RATIO_LABELS = {"Schedule C SE tax modifier"}
+
+income_rows: list[Row] = [
+    ("Bombas W-2 gross income", act_w2_gross, ye_w2_gross),
+    ("Inherited IRA gross withdrawal", act_ira_withdrawal, ye_ira_withdrawal),
+    ("Schedule C income", act_sched_c_inc, ye_sched_c_inc),
+    ("Schedule C expense", act_sched_c_exp, ye_sched_c_exp),
+    ("Home office expense", act_home_office, ye_home_office),
+    ("Net Schedule C profit", act_net_sched_c, ye_net_sched_c),
+    ("Total household gross income", act_household_gross, ye_household_gross),
+]
+
+solo_401k_rows: list[Row] = [
+    ("Shared 401k deferrals made at Bombas", act_shared_deferrals, ye_shared_deferrals),
+    ("2026 IRS maximum total addition limit", 72000.0, 72000.0),
+    ("Net earned income for Solo 401k", act_net_earned_401k, ye_net_earned_401k),
+    ("Maximum employer contribution capacity", act_max_employer_cap, ye_max_employer_cap),
+    ("Employer contributed", act_employer_401k, ye_employer_401k),
+    ("Remaining employer contribution capacity", act_rem_employer, ye_rem_employer),
+    ("Maximum mega backdoor capacity", act_max_mega_cap, ye_max_mega_cap),
+    ("After-tax cash contributed", act_after_tax_cash, ye_after_tax_cash),
+    ("Remaining mega backdoor capacity", act_rem_mega, ye_rem_mega),
+]
+
+taxes_paid_rows: list[Row] = [
+    ("Federal tax withheld from Bombas W-2", act_fed_withheld_w2, ye_fed_withheld_w2),
+    ("Federal tax withheld from inherited IRA", act_fed_withheld_ira, ye_fed_withheld_ira),
+    ("Federal quarterly estimated payments paid", act_fed_estimated, ye_fed_estimated),
+    ("Total federal taxes paid so far", act_total_fed_paid, ye_total_fed_paid),
+    ("NY tax withheld from Bombas W-2", act_ny_withheld_w2, ye_ny_withheld_w2),
+    ("NY quarterly estimated payments paid", act_ny_estimated, ye_ny_estimated),
+    ("Total NY state taxes paid so far", act_total_ny_paid, ye_total_ny_paid),
+    ("NJ tax withheld from Bombas W-2", act_nj_withheld_w2, ye_nj_withheld_w2),
+    ("NJ tax estimated payments paid", act_nj_estimated, ye_nj_estimated),
+    ("Total NJ state taxes paid so far", act_total_nj_paid, ye_total_nj_paid),
+]
+
+final_calc_rows: list[Row] = [
+    ("Schedule C SE tax modifier", se_modifier, se_modifier),
+    ("Net earnings subject to SE tax", act_se_subject, ye_se_subject),
+    ("Calculated self-employment tax", act_se_tax_val, ye_se_tax_val),
+    ("Half of SE tax deduction", act_half_se, ye_half_se),
+    ("401k contributions", act_401k_contribs, ye_401k_contribs),
+    ("HSA contributions", act_hsa_contribs, ye_hsa_contribs),
+    ("Adjusted gross income (AGI)", act_agi, ye_agi),
+    ("2026 standard deduction (MFJ)", std_deduction, std_deduction),
+    ("Total estimated federal taxable income", act_taxable_inc, ye_taxable_inc),
+    ("Calculated federal income tax", act_fed_tax_val, ye_fed_tax_val),
+    ("Total federal balance due / (refund)", act_fed_bal, ye_fed_bal),
+]
+
+new_york_rows: list[Row] = [
+    ("NY AGI", act_w2_gross, ye_w2_gross),
+    ("529 contribution", act_529_contribs, ye_529_contribs),
+    ("Calculated NY state income tax", act_ny_tax_val, ye_ny_tax_val),
+    ("Total NY state balance due / (refund)", act_ny_bal, ye_ny_bal),
+]
+
+new_jersey_rows: list[Row] = [
+    ("Calculated gross NJ state income tax", act_nj_gross_tax, ye_nj_gross_tax),
+    ("Calculated NJ credit for NY taxes paid", act_nj_credit, ye_nj_credit),
+    ("Net NJ state tax liability", act_nj_net, ye_nj_net),
+    ("Total NJ state balance due / (refund)", act_nj_bal, ye_nj_bal),
+]
+
+
+def _fmt(label: str, value: float) -> str:
+    """Ratio rows as a 4-dp number, everything else as currency."""
+    return f"{value:.4f}" if label in RATIO_LABELS else f"${value:,.2f}"
+
+
+# Subtotal rows: bold + the theme's secondary background (matches the Sankey panel).
+_SUBTOTAL_STYLE = "font-weight: bold; background-color: #232731"
+
+
+def _bold_subtotals(row: pd.Series) -> list[str]:
+    # Key on the label column. The label is a real column (not the index) because
+    # st.dataframe renders a Styler's body-cell styles only, not index/header styles.
+    style = _SUBTOTAL_STYLE if row["Line item"] in BOLD_LABELS else ""
+    return [style] * len(row)
+
+
+def _section(rows: list[Row]) -> Styler:
+    """Build a styled Line item / Actual / Year-end table.
+
+    Values are pre-formatted per row (currency vs ratio); subtotal rows — label
+    cell included — are bolded and shaded.
+    """
+    frame = pd.DataFrame(
+        {
+            "Line item": [label for label, _, _ in rows],
+            "Actual": [_fmt(label, act) for label, act, _ in rows],
+            "Year-end": [_fmt(label, ye) for label, _, ye in rows],
+        }
+    )
+    return frame.style.apply(_bold_subtotals, axis=1)
+
+
+def _show_section(title: str, rows: list[Row]) -> None:
+    """Render a section, sized to show every row without an inner scrollbar."""
+    st.subheader(title)
+    # ~35px per row + header; a small buffer avoids a stray scrollbar.
+    st.dataframe(
+        _section(rows),
+        width="stretch",
+        hide_index=True,
+        height=35 * (len(rows) + 1) + 5,
+    )
+
+
+tab1, tab2 = st.tabs(["Tax & contribution calculator", "Ledger (data source)"])
 
 with tab1:
-    st.markdown(
-        '<div class="main-header">2026 Tax & Contribution Calculator</div>', unsafe_allow_html=True
-    )
-
-    def render_row(
-        label: str,
-        val1: float | str,
-        val2: float | str,
-        is_header: bool = False,
-        is_bold: bool = False,
-        is_currency: bool = True,
-    ) -> None:
-        if is_header:
-            st.markdown(f'<div class="section-header">{label}</div>', unsafe_allow_html=True)
-        else:
-            c1, c2, c3 = st.columns([4, 2, 2])
-            weight = "bold" if is_bold else "normal"
-            c1.markdown(
-                f"<span style='font-weight:{weight};'>{label}</span>", unsafe_allow_html=True
-            )
-            c2.markdown(
-                f"<span style='font-weight:{weight};'>${val1:,.2f}</span>"
-                if is_currency and isinstance(val1, int | float)
-                else f"<span>{val1}</span>",
-                unsafe_allow_html=True,
-            )
-            c3.markdown(
-                f"<span style='font-weight:{weight};'>${val2:,.2f}</span>"
-                if is_currency and isinstance(val2, int | float)
-                else f"<span>{val2}</span>",
-                unsafe_allow_html=True,
-            )
-
-    render_row("INCOME INPUTS", "", "", is_header=True)
-    render_row("Bombas W-2 Gross Income", act_w2_gross, ye_w2_gross)
-    render_row("Inherited IRA Gross Withdrawal", act_ira_withdrawal, ye_ira_withdrawal)
-    render_row("Schedule C Income", act_sched_c_inc, ye_sched_c_inc)
-    render_row("Schedule C Expense", act_sched_c_exp, ye_sched_c_exp)
-    render_row("Home Office Expense", act_home_office, ye_home_office)
-    render_row("Net Schedule C Profit", act_net_sched_c, ye_net_sched_c, is_bold=True)
-    render_row(
-        "Total Household Gross Income", act_household_gross, ye_household_gross, is_bold=True
-    )
-
-    render_row("SOLO 401K TRACKER", "", "", is_header=True)
-    render_row("Shared 401k Deferrals Made at Bombas", act_shared_deferrals, ye_shared_deferrals)
-    render_row("2026 IRS Maximum Total Addition Limit", 72000.0, 72000.0)
-    render_row("Net Earned Income for Solo 401k", act_net_earned_401k, ye_net_earned_401k)
-    render_row("Maximum Employer Contribution Capacity", act_max_employer_cap, ye_max_employer_cap)
-    render_row("Employer Contributed", act_employer_401k, ye_employer_401k)
-    render_row(
-        "Remaining Employer Contribution Capacity", act_rem_employer, ye_rem_employer, is_bold=True
-    )
-    render_row("Maximum Mega Backdoor Capacity", act_max_mega_cap, ye_max_mega_cap)
-    render_row("After-Tax Cash Contributed", act_after_tax_cash, ye_after_tax_cash)
-    render_row("Remaining Mega BackdoorCapacity", act_rem_mega, ye_rem_mega, is_bold=True)
-
-    render_row("TAXES PAID LOG (Withholdings & Estimated Payments)", "", "", is_header=True)
-    render_row("Federal Tax Withheld from Bombas W-2", act_fed_withheld_w2, ye_fed_withheld_w2)
-    render_row("Federal Tax Withheld from Inherited IRA", act_fed_withheld_ira, ye_fed_withheld_ira)
-    render_row("Federal Quarterly Estimated Payments Paid", act_fed_estimated, ye_fed_estimated)
-    render_row(
-        "Total Federal Taxes Paid So Far", act_total_fed_paid, ye_total_fed_paid, is_bold=True
-    )
-    render_row("NY Tax Withheld from Bombas W-2", act_ny_withheld_w2, ye_ny_withheld_w2)
-    render_row("NY Quarterly Estimated Payments Paid", act_ny_estimated, ye_ny_estimated)
-    render_row(
-        "Total NY State Taxes Paid So Far", act_total_ny_paid, ye_total_ny_paid, is_bold=True
-    )
-    render_row("NJ Tax Withheld from Bombas W-2", act_nj_withheld_w2, ye_nj_withheld_w2)
-    render_row("NJ Tax Estimated Payments Paid", act_nj_estimated, ye_nj_estimated)
-    render_row(
-        "Total NJ State Taxes Paid So Far", act_total_nj_paid, ye_total_nj_paid, is_bold=True
-    )
-
-    render_row("FINAL TAX CALCULATOR & LIABILITY BALANCE", "", "", is_header=True)
-    render_row("Schedule C SE Tax Modifier", se_modifier, se_modifier)
-    render_row("Net Earnings Subject to SE Tax", act_se_subject, ye_se_subject)
-    render_row("Calculated Self-Employment Tax", act_se_tax_val, ye_se_tax_val)
-    render_row("Half of SE Tax Deduction", act_half_se, ye_half_se)
-    render_row("401k Contributions", act_401k_contribs, ye_401k_contribs)
-    render_row("HSA Contributions", act_hsa_contribs, ye_hsa_contribs)
-    render_row("Adjusted Gross Income (AGI)", act_agi, ye_agi, is_bold=True)
-    render_row("2026 Standard Deduction (MFJ)", std_deduction, std_deduction)
-    render_row(
-        "Total Estimated Federal Taxable Income", act_taxable_inc, ye_taxable_inc, is_bold=True
-    )
-    render_row("Calculated Federal Income Tax", act_fed_tax_val, ye_fed_tax_val)
-    render_row("TOTAL FEDERAL BALANCE DUE / (REFUND)", act_fed_bal, ye_fed_bal, is_bold=True)
-    render_row("New York", "", "", is_bold=True)
-    render_row("NY AGI", act_w2_gross, ye_w2_gross)
-    render_row("529 Contribution", act_529_contribs, ye_529_contribs)
-    render_row("Calculated NY State Income Tax", act_ny_tax_val, ye_ny_tax_val)
-    render_row("TOTAL NY STATE BALANCE DUE / (REFUND)", act_ny_bal, ye_ny_bal, is_bold=True)
-    render_row("New Jersey", "", "", is_bold=True)
-    render_row("Calculated Gross NJ State Income Tax", act_nj_gross_tax, ye_nj_gross_tax)
-    render_row("Calculated NJ Credit for NY Taxes Paid", act_nj_credit, ye_nj_credit)
-    render_row("Net NJ State Tax Liability", act_nj_net, ye_nj_net)
-    render_row("TOTAL NJ STATE BALANCE DUE / (REFUND)", act_nj_bal, ye_nj_bal, is_bold=True)
+    _show_section("Income inputs", income_rows)
+    _show_section("Solo 401k tracker", solo_401k_rows)
+    _show_section("Taxes paid log (withholdings & estimated payments)", taxes_paid_rows)
+    _show_section("Final tax calculator & liability balance", final_calc_rows)
+    _show_section("New York", new_york_rows)
+    _show_section("New Jersey", new_jersey_rows)
 
 with tab2:
-    st.markdown(
-        '<div class="main-header">Underlying Transactions Ledger</div>', unsafe_allow_html=True
+    st.subheader("Underlying transactions ledger")
+    st.dataframe(
+        ledger_df,
+        width="stretch",
+        hide_index=True,
+        column_config={"amount": st.column_config.NumberColumn("Amount", format="$%.2f")},
     )
-    st.dataframe(ledger_df, width="stretch")

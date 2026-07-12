@@ -1,9 +1,4 @@
-"""data-life dashboard.
-
-Run locally:  uv run --package dashboard streamlit run \
-                  apps/dashboard/src/dl_dashboard/app.py
-Reads only the BigQuery `marts` dataset via a read-only service account.
-"""
+"""Financial overview page — KPIs, cash-flow Sankey, and monthly spending."""
 
 from __future__ import annotations
 
@@ -11,40 +6,15 @@ from datetime import date, timedelta
 from typing import TYPE_CHECKING
 
 import pandas as pd
-import plotly.express as px
 import streamlit as st
+from dl_dashboard.charts import cashflow_sankey
+from dl_dashboard.data import load_activity, load_monthly_spending, load_recent_transactions
 from st_rsuite.date_range_picker import date_range_picker
 
 if TYPE_CHECKING:
     from streamlit.delta_generator import DeltaGenerator
 
-from dl_dashboard.charts import cashflow_sankey
-from dl_dashboard.data import load_activity, load_monthly_spending, load_recent_transactions
-from dl_dashboard.menu import menu
-
-st.markdown(
-    """
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-    html, body, [class*="css"]  {
-        font-family: 'Inter', sans-serif;
-    }
-
-    /* Optional: Make headers pop slightly more with a cleaner weight */
-    h1, h2, h3 {
-        font-weight: 600 !important;
-        letter-spacing: -0.02em;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-menu()
-
-st.set_page_config(page_title="Financial Overview", page_icon="💸", layout="wide")
-st.title("💸 Financial Overview")
+st.title("Financial overview")
 st.caption("Personal finance analytics — Monarch Money → BigQuery → dbt → Streamlit.")
 
 
@@ -55,7 +25,15 @@ def _empty_notice() -> None:
     )
 
 
-tab1, tab2 = st.tabs(["😶‍🌫️ At a Glance", "📊 Monthly Spending"])
+def _kpi(col: DeltaGenerator, label: str, value: str, color: str | None = None) -> None:
+    """Bordered KPI tile. `color` (e.g. 'green'/'red') tints the value via a native
+    markdown color directive, which maps to the theme's semantic colors."""
+    with col.container(border=True):
+        st.caption(label)
+        st.markdown(f"### :{color}[{value}]" if color else f"### {value}")
+
+
+tab1, tab2 = st.tabs(["At a glance", "Monthly spending"])
 with tab1:
     try:
         full = load_activity()
@@ -120,16 +98,8 @@ with tab1:
     total_expense = float(activity["spend_amount"].sum())
     savings_rate = (total_income - total_expense) / total_income if total_income > 0 else 0.0
     k1, k2, k3 = st.columns(3)
-
-    def _kpi(col: DeltaGenerator, label: str, value: str, color: str = "inherit") -> None:
-        col.markdown(
-            f"<div style='font-size:0.8rem;color:#808495'>{label}</div>"
-            f"<div style='font-size:1.8rem;font-weight:600;color:{color}'>{value}</div>",
-            unsafe_allow_html=True,
-        )
-
-    _kpi(k1, "Total income", f"${total_income:,.0f}", "#16a34a")
-    _kpi(k2, "Total expense", f"${total_expense:,.0f}", "#dc2626")
+    _kpi(k1, "Total income", f"${total_income:,.0f}", "green")
+    _kpi(k2, "Total expense", f"${total_expense:,.0f}", "red")
     _kpi(k3, "Savings rate", f"{savings_rate:.1%}")
 
     # --- Cash-flow Sankey ------------------------------------------------------
@@ -145,7 +115,7 @@ with tab1:
         ["transaction_date", "merchant_name", "account_name", "amount"]
     ]
     if review.empty:
-        st.success("Nothing awaiting review. 🎉")
+        st.success("Nothing awaiting review.")
     else:
         st.dataframe(review, width="stretch", hide_index=True)
 
@@ -165,22 +135,21 @@ with tab2:
     latest_month = monthly["month"].max()
     this_month = monthly[monthly["month"] == latest_month]
     col1, col2, col3 = st.columns(3)
-    col1.metric("Latest month", str(latest_month))
-    col2.metric("Spend", f"${this_month['total_spend'].sum():,.0f}")
-    col3.metric("Net", f"${this_month['net_amount'].sum():,.0f}")
+    col1.metric("Latest month", str(latest_month), border=True)
+    col2.metric("Spend", f"${this_month['total_spend'].sum():,.0f}", border=True)
+    col3.metric("Net", f"${this_month['net_amount'].sum():,.0f}", border=True)
 
     # --- Spend over time by category group ------------------------------------
     st.subheader("Monthly spend by category group")
-    fig = px.bar(
+    st.bar_chart(
         monthly,
         x="month",
         y="total_spend",
         color="category_group",
-        labels={"total_spend": "Spend ($)", "month": "Month", "category_group": "Category"},
-        color_discrete_sequence=px.colors.qualitative.Safe,
+        stack=True,
+        x_label="Month",
+        y_label="Spend ($)",
     )
-    fig.update_layout(legend_title_text="", margin=dict(t=10, b=0, l=0, r=0))
-    st.plotly_chart(fig, width="stretch")
 
     # --- Recent transactions ---------------------------------------------------
     st.subheader("Recent transactions")

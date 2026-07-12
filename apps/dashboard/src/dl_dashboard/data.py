@@ -51,6 +51,8 @@ def load_activity() -> pd.DataFrame:
 
 @st.cache_data(ttl=3600)
 def load_recent_transactions(limit: int = 200, filter: str = "1=1") -> pd.DataFrame:
+    # `filter` is interpolated as raw SQL: it must only ever carry
+    # developer-supplied predicates, never user input.
     sql = f"""
         select *
         from marts.fct_transactions
