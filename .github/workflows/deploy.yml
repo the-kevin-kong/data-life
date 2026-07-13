@@ -1,13 +1,24 @@
 name: Deploy
 
-# Manual deploy: builds + pushes the three job images to Artifact Registry,
-# then points the Cloud Run Jobs at the new image tag.
+# Builds + pushes the three job images to Artifact Registry, then points the
+# Cloud Run Jobs at the new image tag.
+# Triggers: push to main on job-relevant paths (below), or manual dispatch.
 #
 # Requires (repo settings):
 #   vars.GCP_PROJECT_ID, vars.GCP_REGION, vars.ARTIFACT_REPO
 #   secrets.WIF_PROVIDER  - Workload Identity Federation provider resource name
 #   secrets.DEPLOY_SA     - deployer service account email (keyless auth)
 on:
+  push:
+    branches: [main]
+    paths:
+      - services/ingest-monarch/**
+      - services/split-transactions/**
+      - transform/dbt/**
+      - packages/**
+      - uv.lock
+      - pyproject.toml
+      - .github/workflows/deploy.yml
   workflow_dispatch:
 
 permissions:
