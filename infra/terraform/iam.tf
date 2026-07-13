@@ -41,6 +41,12 @@ resource "google_project_iam_member" "job_users" {
   member  = "serviceAccount:${each.value}"
 }
 
+resource "google_project_iam_member" "session_user" {
+  project = var.project_id
+  role    = "roles/bigquery.readSessionUser"
+  member  = "serviceAccount:${google_service_account.dbt.email}"
+}
+
 # Ingestion creates + writes its own dataset (`monarch`) at runtime, so it needs
 # project-level data-editor (includes datasets.create).
 resource "google_project_iam_member" "ingest_bq_editor" {
