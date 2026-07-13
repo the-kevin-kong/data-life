@@ -1,0 +1,43 @@
+# Build context is the repo root for every image (see each Dockerfile).
+# The Python images `COPY . /app`, so keep every workspace manifest + src that
+# `uv sync` resolves; exclude only what no runtime needs.
+
+# VCS / CI
+.git
+.gitignore
+.github
+
+# Not part of any image (README.md kept — pyproject `readme` needs it)
+infra/
+docs/
+
+# Secrets / state — never bake into a layer
+.env
+.env.*
+!.env.example
+**/*sa*.json
+**/*session*
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# Virtualenvs & tool caches
+.venv
+**/.venv
+.ruff_cache
+.mypy_cache
+.pytest_cache
+**/__pycache__
+**/*.py[cod]
+
+# Regenerated dbt artifacts (image runs `dbt deps` itself)
+transform/dbt/dbt_packages/
+transform/dbt/target/
+transform/dbt/logs/
+
+# Tests — not needed at runtime
+**/tests/
+
+# Misc
+**/node_modules
+.DS_Store

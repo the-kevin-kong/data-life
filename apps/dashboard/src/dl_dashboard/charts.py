@@ -147,7 +147,7 @@ def cashflow_sankey(df: pd.DataFrame) -> go.Figure | None:
         go.Sankey(
             arrangement="snap",
             # Explicit label font + no shadow so text stays legible over nodes.
-            textfont=dict(color="black", size=13, shadow="none"),
+            textfont=dict(color="white", size=13, shadow="none"),
             node=dict(label=labels, color=node_colors, pad=26, thickness=18, line_width=0),
             link=dict(source=src, target=dst, value=val, color=link_colors),
         )
@@ -155,7 +155,7 @@ def cashflow_sankey(df: pd.DataFrame) -> go.Figure | None:
     fig.update_layout(
         margin=dict(t=10, b=10, l=0, r=0),
         height=height,
-        paper_bgcolor="white",
-        plot_bgcolor="white",
+        paper_bgcolor="#232731",
+        plot_bgcolor="#232731",
     )
     return fig

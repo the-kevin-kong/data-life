@@ -6,7 +6,7 @@ Streamlit app over the BigQuery `marts` dataset.
 
 ```bash
 gcloud auth application-default login
-uv run --package dashboard streamlit run apps/dashboard/src/dl_dashboard/app.py
+uv run --package dashboard streamlit run apps/dashboard/src/dl_dashboard/streamlit_app.py
 ```
 
 ## Deploy on the NAS

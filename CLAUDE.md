@@ -37,7 +37,7 @@ Naming: import packages use the `dl_` prefix; `dl_common` is imported by everyth
 | `just typecheck` | `uv run mypy packages services apps` |
 | `just test` | `uv run pytest` |
 | `just dbt-parse` / `dbt-build` | `cd transform/dbt && uv run dbt parse` / `build` |
-| `just dashboard` | `uv run --package dashboard streamlit run apps/dashboard/src/dl_dashboard/app.py` |
+| `just dashboard` | `uv run --package dashboard streamlit run apps/dashboard/src/dl_dashboard/streamlit_app.py` |
 | `just ingest` / `split-dry` / `split` | run the service entrypoints |
 | `just tf-plan` / `tf-apply` / `tf-init` | terraform in `infra/terraform` with `TF_VAR_project_id` |
 | `just cloud-build` | build+push all images via Cloud Build |
@@ -118,6 +118,8 @@ before `tf-apply`. Bootstrap details in [infra/terraform/README.md](infra/terraf
 
 - The `justfile` runs under **Git Bash** on Windows (`windows-shell` is set to Git Bash, not
   WSL). Chained commands use `&&`.
-- Launch Streamlit only via `just dashboard` / `streamlit run` — **never `python app.py`**. The
-  dashboard uses a Streamlit v2 component (`st_rsuite`) whose assets are discovered at server
+- Launch Streamlit only via `just dashboard` / `streamlit run` — **never `python streamlit_app.py`**.
+  The dashboard uses a Streamlit v2 component (`st_rsuite`) whose assets are discovered at server
   startup; bare `python` skips that and raises a component-registration error.
+- Multipage via `st.navigation`/`st.Page`: entry is `streamlit_app.py` (holds the single
+  `st.set_page_config`), pages live in `app_pages/` (`overview.py`, `tax_breakdown.py`).

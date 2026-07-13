@@ -62,7 +62,7 @@ dbt-parse:
 
 # Run the Streamlit dashboard locally.
 dashboard:
-    uv run --package dashboard streamlit run apps/dashboard/src/dl_dashboard/app.py
+    uv run --package dashboard streamlit run apps/dashboard/src/dl_dashboard/streamlit_app.py
 
 # Build the dockerfiles to Artifact Registry
 cloud-build:
