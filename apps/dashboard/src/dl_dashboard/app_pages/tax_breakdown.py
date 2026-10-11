@@ -191,8 +191,9 @@ act_household_gross = act_w2_gross + act_ira_withdrawal + act_net_sched_c
 act_net_earned_401k = act_net_sched_c - (calc_se_tax(act_net_sched_c * 0.9235, act_w2_gross) / 2)
 act_max_employer_cap = act_net_earned_401k * 0.20
 act_rem_employer = act_max_employer_cap - act_employer_401k
+# 415(c) is per-plan, so Bombas deferrals don't count against the Solo cap.
 act_max_mega_cap = min(act_net_earned_401k, 72000.0)
-act_rem_mega = act_max_mega_cap - act_shared_deferrals - act_max_employer_cap - act_after_tax_cash
+act_rem_mega = act_max_mega_cap - act_max_employer_cap - act_after_tax_cash
 
 # YE Estimation
 ye_net_sched_c = ye_sched_c_inc + ye_sched_c_exp + ye_home_office
@@ -201,7 +202,7 @@ ye_net_earned_401k = ye_net_sched_c - (calc_se_tax(ye_net_sched_c * 0.9235, ye_w
 ye_max_employer_cap = ye_net_earned_401k * 0.20
 ye_rem_employer = ye_max_employer_cap - ye_employer_401k
 ye_max_mega_cap = min(ye_net_earned_401k, 72000.0)
-ye_rem_mega = ye_max_mega_cap - ye_shared_deferrals - ye_max_employer_cap - ye_after_tax_cash
+ye_rem_mega = ye_max_mega_cap - ye_max_employer_cap - ye_after_tax_cash
 
 # Taxes Paid Log
 act_total_fed_paid = act_fed_withheld_w2 + act_fed_withheld_ira + act_fed_estimated
@@ -296,7 +297,7 @@ solo_401k_rows: list[Row] = [
     ("Maximum employer contribution capacity", act_max_employer_cap, ye_max_employer_cap),
     ("Employer contributed", act_employer_401k, ye_employer_401k),
     ("Remaining employer contribution capacity", act_rem_employer, ye_rem_employer),
-    ("Maximum mega backdoor capacity", act_max_mega_cap, ye_max_mega_cap),
+    ("Solo 401k total addition cap", act_max_mega_cap, ye_max_mega_cap),
     ("After-tax cash contributed", act_after_tax_cash, ye_after_tax_cash),
     ("Remaining mega backdoor capacity", act_rem_mega, ye_rem_mega),
 ]
